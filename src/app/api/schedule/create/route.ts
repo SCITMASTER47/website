@@ -1,4 +1,4 @@
-import { ScheduleCreateRequest } from "@/components/global/schedule";
+import { ScheduleCreateRequest } from "@/_types/schedule";
 import { NextRequest, NextResponse } from "next/server";
 
 /**

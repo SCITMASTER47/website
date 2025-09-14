@@ -1,5 +1,5 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Brain } from "lucide-react";
+import { Card, CardContent } from "./card";
 
 export default function OnboardingLoading() {
   return (

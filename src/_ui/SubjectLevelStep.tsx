@@ -5,18 +5,12 @@ import { useMemo } from "react";
 export default function SubjectLevelStep() {
   const {
     formData,
-    subjects,
+
     handleSubjectLevelChange,
     setFocusNotes,
     onSubmit,
   } = useCreateScheduleStore();
 
-  const isNextStepAvailable = useMemo(() => {
-    return (
-      formData.proficiency &&
-      Object.keys(formData.proficiency).length === subjects.length
-    );
-  }, [formData, subjects.length]);
   return (
     <div className="flex flex-col w-full justify-between">
       {/* <CardContent className="flex-1  overflow-y-auto space-y-6 pb-20">

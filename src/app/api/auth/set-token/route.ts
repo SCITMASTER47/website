@@ -1,22 +1,17 @@
+import { checkValidateJwtOnServer } from "@/_utils/cookie";
 import { NextRequest, NextResponse } from "next/server";
-import { checkValidateJwtOnServer } from "@/lib/nextjs-cookie-utils";
 
 export async function POST(request: NextRequest) {
   console.log("Set-token API called");
   try {
     const { token } = await request.json();
-    console.log("Received token:", token);
+
     if (!token) {
       return NextResponse.json({ error: "No token provided" }, { status: 400 });
     }
 
     // 토큰 유효성 검사
-    const isValid = await checkValidateJwtOnServer(token);
-
-    if (!isValid) {
-      console.log("유효하지 않은 토큰");
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
+    await checkValidateJwtOnServer(token);
 
     // 쿠키 설정과 함께 응답 생성
     const response = NextResponse.json({ success: true });

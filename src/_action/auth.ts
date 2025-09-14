@@ -5,7 +5,7 @@ import { deleteJwtFromServer, setJwtCookie } from "@/_utils/cookie";
  * 로그인 액션: 토큰을 받아 쿠키에 설정
  * @param data JWT 토큰
  */
-export const loginAction = async (data: UserLoginRequest): Promise<void> => {
+export const loginAction = async (_data: UserLoginRequest): Promise<void> => {
   if (process.env.NEXT_PUBLIC_NODE_ENV === "test") {
     const tmpToken =
       "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMDMiLCJlbWFpbCI6InRlc3QyMTNAdGVzdC5jb20iLCJpYXQiOjE3NTc0NjY5ODEsImV4cCI6MTc1ODMzMDk4MX0.4Gvq-z2B1rhzynTAIQA2dxxhSod8oFLbrQXJ1vBGr1w";
@@ -27,7 +27,7 @@ export const logoutAction = async (): Promise<void> => {
  * 로그인 액션: 토큰을 받아 쿠키에 설정
  * @param data JWT 토큰
  */
-export const signUpAction = async (data: UserSignUpRequest): Promise<void> => {
+export const signUpAction = async (_data: UserSignUpRequest): Promise<void> => {
   if (process.env.NEXT_PUBLIC_NODE_ENV === "test") {
     await new Promise((resolve) => setTimeout(resolve, 500));
     return;
