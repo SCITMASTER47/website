@@ -6,7 +6,7 @@ import TimelineIcon from "@mui/icons-material/Timeline";
 
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import { useState } from "react";
-import Todo, { TodoSkeleton } from "../todo";
+import Todo from "../todo";
 import { useRouter } from "next/navigation";
 
 export default function ScheduleLayout() {

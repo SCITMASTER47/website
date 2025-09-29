@@ -1,5 +1,8 @@
 import SideBar from "@/_components/sidebar/sidebarServer";
 
+// cookies를 사용하는 서버 컴포넌트이므로 동적 렌더링 강제
+export const dynamic = "force-dynamic";
+
 export default function SideBarLayout({
   children,
 }: {
