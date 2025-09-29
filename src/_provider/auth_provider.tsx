@@ -10,15 +10,14 @@ export default function AuthProvider({
   children: React.ReactNode;
 }) {
   // 요청 확인 제외 경로 설정
-  // / , /auth/**
-  const excludedPaths = useMemo(() => ["/auth"], []);
-  // use client 에서 현제 페이지 path 가져오기
+  const excludedPaths = useMemo(() => ["/auth/login", "/auth/signUp", "/"], []);
 
   const currentPath = usePathname();
   const isExcluded = useMemo(() => {
-    return excludedPaths.some((path) => currentPath.startsWith(path));
+    return excludedPaths.some((path) => currentPath === path);
   }, [currentPath, excludedPaths]);
   const checkAuth = useAuthStore((state) => state.checkAuth);
+  // 제외 경로가 아닐 때만 checkAuth 실행
   useEffect(() => {
     if (!isExcluded) {
       checkAuth();

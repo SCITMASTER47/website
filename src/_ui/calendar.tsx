@@ -7,6 +7,8 @@ import {
   format,
   startOfMonth,
   endOfMonth,
+  startOfWeek,
+  endOfWeek,
   eachDayOfInterval,
   isSameMonth,
   isSameDay,
@@ -22,6 +24,7 @@ import { Button } from "./button";
 export interface CalendarItem {
   title: string;
   content: string;
+  isDone: boolean;
 }
 
 export interface CalendarData {
@@ -64,7 +67,13 @@ export default function Calendar({
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
-  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+  // 월요일부터 시작하는 주의 시작과 끝을 구함
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+
+  // 캘린더에 표시할 모든 날짜들 (이전 달, 현재 달, 다음 달 포함)
+  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const calculateTooltipPosition = (dayElement: HTMLElement) => {
     if (!dayElement || !calendarRef.current) return;
@@ -161,7 +170,7 @@ export default function Calendar({
         </CardHeader>
         <CardContent className="p-0">
           <div className="grid grid-cols-7 gap-1 mb-4">
-            {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
+            {["월", "화", "수", "목", "금", "토", "일"].map((day) => (
               <div
                 key={day}
                 className="p-2 text-center text-sm font-medium text-gray-600"
@@ -189,41 +198,46 @@ export default function Calendar({
                   }`}
                   onClick={() => onDateSelect(day)}
                   onMouseEnter={(e) =>
-                    studyItems.length > 0 && handleMouseEnter(day, e)
+                    isCurrentMonth &&
+                    studyItems.length > 0 &&
+                    handleMouseEnter(day, e)
                   }
                   onMouseLeave={handleMouseLeave}
                 >
                   <div
                     className={`text-sm font-medium mb-1 ${
                       isCurrentMonth ? "text-gray-900" : "text-gray-400"
-                    }`}
+                    } ${!isCurrentMonth ? "opacity-50" : ""}`}
                   >
                     {format(day, "d")}
                   </div>
 
-                  <div className="flex flex-col gap-1">
-                    {studyItems.slice(0, 2).map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-1 overflow-hidden"
-                        title={`${item.title} (${item.content}분)`}
-                      >
+                  {/* 현재 달의 날짜에만 일정 표시 */}
+                  {isCurrentMonth && (
+                    <div className="flex flex-col gap-1">
+                      {studyItems.slice(0, 2).map((item, index) => (
                         <div
-                          className={`flex-shrink-0 h-1 w-1 rounded text-xs ${getSubjectColor(
-                            item.title
-                          )}`}
-                        />
-                        <span className="flex-1 text-[8px] truncate">
-                          {item.title}
-                        </span>
-                      </div>
-                    ))}
-                    {studyItems.length > 2 && (
-                      <div className="text-xs text-gray-500 text-center">
-                        +{studyItems.length - 2}
-                      </div>
-                    )}
-                  </div>
+                          key={index}
+                          className="flex items-center gap-1 overflow-hidden"
+                          title={`${item.title} (${item.content}분)`}
+                        >
+                          <div
+                            className={`flex-shrink-0 h-1 w-1 rounded text-xs ${
+                              item.isDone ? "bg-green-500" : "bg-gray-300"
+                            }`}
+                          />
+                          <span className="flex-1 text-[8px] truncate">
+                            {item.title}
+                          </span>
+                        </div>
+                      ))}
+                      {studyItems.length > 2 && (
+                        <div className="text-xs text-gray-500 text-center">
+                          +{studyItems.length - 2}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -250,9 +264,9 @@ export default function Calendar({
                 className="flex items-center gap-2 p-2 bg-gray-50 rounded"
               >
                 <div
-                  className={`w-3 h-3 rounded-full ${getSubjectColor(
-                    item.title
-                  )}`}
+                  className={`w-3 h-3 rounded-full ${
+                    item.isDone ? "bg-green-500" : "bg-gray-300"
+                  }`}
                 />
                 <div className="flex-1">
                   <p className="font-medium text-xs">{item.title}</p>

@@ -6,6 +6,9 @@ export async function GET(request: NextRequest) {
     const certificateId = searchParams.get("certificateId");
     const token = request.headers.get("authorization");
 
+    if (!certificateId) {
+      throw new Error("certificateId is required");
+    }
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/certificates/${certificateId}/books`,
       {

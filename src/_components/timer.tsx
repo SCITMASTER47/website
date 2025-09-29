@@ -41,6 +41,16 @@ export default function Timer() {
   //   );
   // }
 
+  if (!isClient) {
+    // SSR에서는 빈 값 또는 placeholder 렌더링
+    return (
+      <div className="flex w-full flex-col ">
+        <div className="text-2xl font-bold uppercase ">&nbsp;</div>
+        <div className="text font-bold uppercase">&nbsp;</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex w-full flex-col ">
       <div className="text-2xl font-bold uppercase ">
@@ -48,7 +58,6 @@ export default function Timer() {
           month: "long",
           day: "numeric",
           weekday: "long",
-
           timeZone: "Asia/Seoul",
         })}
       </div>

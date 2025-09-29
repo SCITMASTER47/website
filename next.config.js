@@ -14,6 +14,7 @@ const nextConfig = {
       "lh7-rt.googleusercontent.com",
       "imagesisa.ybmnet.co.kr",
       "mo.q-net.or.kr",
+      "scit472.s3.ap-northeast-2.amazonaws.com",
     ],
   },
 
@@ -27,6 +28,8 @@ const nextConfig = {
       ignore: [/\api\/v1\/health/],
     },
   },
+  devIndicators: false,
+  reactStrictMode: false,
 };
 
 module.exports = nextConfig;

@@ -12,7 +12,7 @@ export async function GET(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/todo/getByDate?date=${date}`,
       {
         method: "GET",
-        cache: "force-cache",
+        // cache: "force-cache",
         headers: {
           ...(token && { Authorization: token }),
         },

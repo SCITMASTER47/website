@@ -1,23 +1,18 @@
 "use client";
 import { useCreateScheduleStore } from "@/_store/createSchedule";
 import Calendar from "../../_ui/calendar";
-import { useEffect, useMemo, useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 export default function ExamDateStep() {
-  const { formData, handleExamDateChange } = useCreateScheduleStore();
+  const { handleExamDateChange } = useCreateScheduleStore();
 
   const selectedDate = useMemo(() => {
-    return formData.examDate ? new Date(formData.examDate) : new Date();
-  }, [formData.examDate]);
+    return new Date();
+  }, []);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const router = useRouter();
-  useEffect(() => {
-    if (formData.examDate) {
-      const examDate = new Date(formData.examDate);
-      setCurrentMonth(examDate);
-    }
-  }, [formData.examDate]);
+
   const handleDateSelect = (date: Date) => {
     const nextUrl = handleExamDateChange(date);
     router.replace(nextUrl);

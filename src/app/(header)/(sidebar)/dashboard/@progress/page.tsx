@@ -9,7 +9,7 @@ export default function ProgressPage() {
   const {
     doneTodoCount,
     totalTodoCount,
-    inProgressTodoCount,
+
     notCompletedTodoCount,
   } = useTodayScheduleStore();
   return (
@@ -36,12 +36,7 @@ export default function ProgressPage() {
           <p className="text-[#3366cc] font-bold text-3xl">{doneTodoCount}</p>
           <p className="text-sm text-[#737b8c] font-medium">완료</p>
         </div>
-        <div className="flex flex-col items-center justify-center rounded-2xl  w-full  border-[#dcdfe5] border-2 py-2">
-          <p className="text-[#f5a83d] font-bold text-3xl">
-            {inProgressTodoCount}
-          </p>
-          <p className="text-sm text-[#737b8c] font-medium">진행중</p>
-        </div>
+
         <div className="flex flex-col items-center justify-center rounded-2xl  w-full  border-[#dcdfe5] border-2 py-2">
           <p className="text-[#e74c3c] font-bold text-3xl">
             {notCompletedTodoCount}

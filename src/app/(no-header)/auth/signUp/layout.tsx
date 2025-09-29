@@ -1,4 +1,4 @@
-import GoogleLogin from "@/_components/google_login";
+import GoogleAuth from "@/_components/google_login";
 import Link from "next/link";
 
 export default function AuthLayout({
@@ -17,7 +17,7 @@ export default function AuthLayout({
           <span className=" px-2 text-muted-foreground">또는</span>
         </div>
       </div>
-      <GoogleLogin />
+      <GoogleAuth isSignUp />
       <Link
         href="/auth/login"
         className="text-primary text-sm text-center hover:underline"
