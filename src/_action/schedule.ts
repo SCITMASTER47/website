@@ -1,11 +1,4 @@
-import {
-  Book,
-  Certification,
-  MonthlySchedule,
-  Page,
-  ScheduleCreateRequest,
-  TodoProps,
-} from "@/_types/schedule";
+import { ScheduleCreateRequest } from "@/_types/schedule";
 import { SSEOnEndEvent, SSEOnStartEvent } from "@/_types/sse";
 import { createAISessionResponse } from "@/_types/chat";
 import { getJwtFromCookie } from "@/_utils/cookie";
@@ -21,7 +14,7 @@ export interface SSEOptions {
   onConnect: (event: MessageEvent<SSEOnStartEvent>) => void;
   onChatMessage: (event: MessageEvent<string>) => void;
   onTodoMessage: (event: MessageEvent<string>) => void;
-  onEndMessage: (event: MessageEvent<SSEOnEndEvent>) => void;
+  onEndMessage: (event: SSEOnEndEvent) => void;
   onError: (error: Event) => void;
 }
 export async function connectSSE({
@@ -38,6 +31,7 @@ export async function connectSSE({
   const headers = await getJwtFromCookie();
   url.searchParams.append("token", headers);
 
+  // EventSource 생성
   const eventSource = new EventSource(url.toString());
 
   eventSource.addEventListener(
@@ -55,13 +49,12 @@ export async function connectSSE({
     onTodoMessage(event);
   });
   // AI 완료
-  eventSource.addEventListener(
-    "COMPLETE",
-    (event: MessageEvent<SSEOnEndEvent>) => {
-      onEndMessage(event);
-      eventSource.close();
-    }
-  );
+  eventSource.addEventListener("COMPLETE", (event: MessageEvent<string>) => {
+    console.log("SSE COMPLETE 이벤트 수신:", event.data);
+    const messageParse = JSON.parse(event.data) as SSEOnEndEvent;
+    onEndMessage(messageParse);
+    eventSource.close();
+  });
   // 오류 처리
   eventSource.onerror = (error) => {
     onError(error);
@@ -75,7 +68,8 @@ export async function connectSSE({
 
 /**
  *
- * @param userLogin
+ * @param scheduleForm
+ * @param token
  * @returns AI chatroomId
  */
 export async function createSchedule(
@@ -86,6 +80,7 @@ export async function createSchedule(
     if (!headers) {
       throw new Error("No access_token cookie found");
     }
+
     const url = new URL(
       "/api/ai/schedules/sessions",
       process.env.NEXT_PUBLIC_BASE_URL
@@ -98,6 +93,7 @@ export async function createSchedule(
       },
       body: JSON.stringify(scheduleForm),
     });
+
     if (!res.ok) {
       throw new Error("Failed to create schedule");
     }
@@ -106,43 +102,52 @@ export async function createSchedule(
     if (resJson?.status != "ok") {
       throw new Error(resJson?.message || "Failed to create schedule");
     }
-    return resJson as createAISessionResponse;
-  } catch {
+    return resJson.data as createAISessionResponse;
+  } catch (error) {
+    console.error("Error creating schedule:", error);
     throw new Error("Failed to create schedule");
   }
 }
 
 /**
- * 이번달 스케쥴 가져오기
- * @param year
- * @param month
- * @returns monthly schedule
+ *
+ * @param scheduleForm
+ * @param token
+ * @returns AI chatroomId
  */
-export async function getMonthlyTodos({
-  year,
-  month,
-}: {
-  year: number;
-  month: number;
-}): Promise<MonthlySchedule> {
-  const studyData = {
-    "2025-09-05": [
-      {
-        subject: "문자·어휘 보다 엄청나게 긴 문자열이 들어옵니다.",
-        duration: 30,
+export async function saveSchedule(
+  sessionId: string,
+  versionId: string
+): Promise<void> {
+  try {
+    const headers = await getJwtFromCookie();
+    if (!headers) {
+      throw new Error("No access_token cookie found");
+    }
+
+    const url = new URL(
+      "/api/schedules/confirm",
+      process.env.NEXT_PUBLIC_BASE_URL
+    );
+    const res = await fetch(url.toString(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${headers}`,
       },
-      { subject: "문법", duration: 45 },
-      { subject: "문법", duration: 45 },
-      { subject: "문법", duration: 45 },
-    ],
-    "2024-01-16": [
-      { subject: "독해", duration: 60 },
-      { subject: "청해", duration: 30 },
-    ],
-    "2025-09-30": [
-      { subject: "문법", duration: 45 },
-      { subject: "모의고사", duration: 120 },
-    ],
-  };
-  return studyData;
+      body: JSON.stringify({ sessionId, versionId }),
+    });
+    console.log("save Schedule Response:", res);
+    if (!res.ok) {
+      throw new Error("Failed to create schedule");
+    }
+
+    const resJson = await res.json();
+    if (resJson?.status != "ok") {
+      throw new Error(resJson?.message || "Failed to create schedule");
+    }
+  } catch (error) {
+    console.error("Error creating schedule:", error);
+    throw new Error("Failed to create schedule");
+  }
 }

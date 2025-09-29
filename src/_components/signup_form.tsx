@@ -1,17 +1,31 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/_store/auth";
-import { UserSignUpRequest } from "@/_types/auth";
-import { createFormUpdater, isFormValid, resetForm } from "@/_utils/form";
+import { UserLoginRequest } from "@/_types/auth";
+import { createFormUpdater, resetForm } from "@/_utils/form";
 
-export default function SignupForm() {
-  const { isLoading, error, signUp } = useAuthStore();
-  const [formData, setFormData] = useState<UserSignUpRequest>({
+interface SignUpFormProps {
+  error?: string;
+  token?: string;
+}
+
+export default function SignUpForm({
+  error: serverError,
+  token,
+}: SignUpFormProps) {
+  const { isLoading, error, signUp, onGoogleLoginCallback } = useAuthStore();
+  const [formData, setFormData] = useState<UserLoginRequest>({
     email: "",
     password: "",
   });
   const router = useRouter();
+
+  // URL에서 받은 token이 있으면 자동 로그인 처리
+  useEffect(() => {
+    if (!token) return;
+    onGoogleLoginCallback(token, serverError);
+  }, [token, serverError, onGoogleLoginCallback]);
 
   const updateFormData = createFormUpdater(setFormData);
 
@@ -32,32 +46,26 @@ export default function SignupForm() {
     }
   };
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await signUp(formData);
-    handleResetForm();
-    router.replace("/auth/login");
+    try {
+      e.preventDefault();
+
+      await signUp(formData);
+      handleResetForm();
+      alert("회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.");
+      router.replace("/auth/login");
+    } catch (error) {
+      console.log(error);
+    }
   };
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="w-full p-8  rounded-3xl shadow flex flex-col gap-6 border border-primary"
-    >
+    <form onSubmit={handleSubmit} className="w-full   flex flex-col gap-6 ">
       <h2 className="text-2xl font-bold text-primary mb-2 text-center">
         회원가입
       </h2>
 
-      {/* <input
-          type="text"
-          placeholder="이름"
-          value={formData.name}
-          onChange={(e) => updateFormData("name", e.target.value)}
-          className="border border-primary bg-white p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-base"
-          required
-          disabled={loading}
-        /> */}
-
       <input
-        type="email"
+        type="text"
         placeholder="이메일"
         value={formData.email}
         onChange={(e) => updateFormData("email", e.target.value)}
@@ -77,21 +85,11 @@ export default function SignupForm() {
       />
 
       {error && <div className="text-red-500 text-sm text-center">{error}</div>}
-
       {/* 개발 환경에서만 더미 데이터 버튼 표시 */}
-      {process.env.NODE_ENV === "development" && (
-        <button
-          type="button"
-          onClick={fillDummyData}
-          className="bg-gray-500 text-white py-1 px-3 rounded text-xs hover:bg-gray-600 transition"
-        >
-          더미 데이터 채우기
-        </button>
-      )}
 
       <button
         type="submit"
-        disabled={isLoading || !isFormValid(formData)}
+        disabled={isLoading}
         className="bg-primary text-white py-2 rounded-2xl font-semibold shadow hover:bg-primary/80 transition disabled:opacity-50"
       >
         {isLoading ? "회원가입 중..." : "회원가입"}

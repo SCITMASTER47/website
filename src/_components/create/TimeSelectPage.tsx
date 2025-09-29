@@ -1,14 +1,46 @@
 "use client";
-import React, { useState } from "react";
-import { Button } from "@/_ui/button";
+import React, { useEffect, useState } from "react";
 import { Card } from "@/_ui/card";
+import { useRouter } from "next/navigation";
+import { useCreateScheduleStore } from "@/_store/createSchedule";
 
 const DAYS = ["월", "화", "수", "목", "금", "토", "일"];
 
 export default function TimeSelectPage() {
+  const { handleClickDateTimeNext } = useCreateScheduleStore();
+  const router = useRouter();
   const [selectedTimes, setSelectedTimes] = useState<Record<string, number>>(
     {}
   );
+
+  // 시작하면 cookie에 저장된 정보를 바탕으로 state초기화
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        // 자격증 정보 가져오기
+        const availableDaysCookie = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("create_schedule_available_days="))
+          ?.split("=")[1];
+
+        if (availableDaysCookie) {
+          const availableDaysData = JSON.parse(
+            decodeURIComponent(availableDaysCookie)
+          );
+          if (availableDaysData) {
+            setSelectedTimes({ ...availableDaysData, total: 0 });
+          } else {
+            setSelectedTimes({});
+          }
+        } else {
+          // 자격증 정보가 없으면 빈 배열 설정
+          setSelectedTimes({});
+        }
+      } catch (error) {
+        console.error("Failed to load data from cookies:", error);
+      }
+    }
+  }, []);
 
   const handleTimeSelect = (day: string, hours: number) => {
     setSelectedTimes((prev) => ({
@@ -18,9 +50,8 @@ export default function TimeSelectPage() {
   };
 
   const handleSubmit = () => {
-    // 선택된 시간 데이터를 서버로 전송
-    console.log("Selected times:", selectedTimes);
-    // TODO: 서버 액션 호출
+    handleClickDateTimeNext({ ...selectedTimes, total: totalHours });
+    router.push("/create/confirm");
   };
 
   const totalHours = Object.values(selectedTimes).reduce(
@@ -34,7 +65,7 @@ export default function TimeSelectPage() {
         <div className="space-y-2">
           {DAYS.map((day) => (
             <div key={day} className="flex items-center gap-4">
-              <div className="w-8 text-center font-medium text-gray-700">
+              <div className="w-8 text-center text-md font-bold block">
                 {day}
               </div>
               <div className="flex-1">
@@ -51,12 +82,15 @@ export default function TimeSelectPage() {
         <div className="mt-8 pt-6 border-t border-gray-200">
           <div className="flex justify-between items-center mb-4">
             <div className="text-lg font-medium">
-              총 학습 시간:{" "}
-              <span className="text-blue-600">{totalHours}시간</span>
+              <span className="text-purple-600">{totalHours}시간</span>
             </div>
-            <Button onClick={handleSubmit} disabled={totalHours === 0}>
-              설정 완료
-            </Button>
+            <button
+              type="button"
+              className="text-sm text-gray-500 hover:text-gray-700"
+              onClick={handleSubmit}
+            >
+              다음
+            </button>
           </div>
         </div>
       </Card>
@@ -85,7 +119,7 @@ function TimeBar({ day, selectedHours, onTimeSelect }: TimeBarProps) {
               ${
                 selectedHours === 0
                   ? hour === 0
-                    ? "bg-red-500 hover:bg-red-600"
+                    ? "bg-gray-300 hover:bg-gray-400"
                     : "bg-gray-200 hover:bg-gray-300"
                   : hour <= selectedHours
                   ? hour === 0

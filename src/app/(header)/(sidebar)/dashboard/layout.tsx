@@ -16,16 +16,16 @@ export default function ScheduleLayout({
         id="main_section"
         className="flex flex-row overflow-hidden  h-full w-full"
       >
-        <section className="w-72 h-full overflow-y-hidden border-r-2 border-r-border/50 ">
+        <section className="flex-2 h-full overflow-y-hidden border-r-2 border-r-border/50 ">
           <div className="relative w-full flex h-full grow">
-            <div className="flex-1 overflow-y-hidden">
+            <div className="flex-1 overflow-y-hidden pr-2">
               <Suspense fallback={<TodosLoading />}>{todo}</Suspense>
             </div>
           </div>
         </section>
 
         {/* 오른쪽 절반 - 고정 영역 */}
-        <section className="flex flex-col flex-5/7 h-full overflow-y-auto gap-4 pl-4">
+        <section className="flex flex-col flex-5 h-full overflow-y-auto gap-4 pl-4">
           {progress}
           <section className="flex-1">{calendar}</section>
         </section>

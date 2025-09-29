@@ -24,8 +24,18 @@ export default function LoginForm({
   // URL에서 받은 token이 있으면 자동 로그인 처리
   useEffect(() => {
     if (!token) return;
-    onGoogleLoginCallback(token, serverError);
-  }, [token, serverError, onGoogleLoginCallback]);
+    // googleCallback 호출 후 error 없으면 router로 "/"이동 처리
+    const callback = async () => {
+      try {
+        await onGoogleLoginCallback(token, serverError);
+        router.replace("/");
+      } catch (error) {
+        console.error("Google login callback failed:", error);
+      }
+    };
+    callback();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, serverError, router]);
 
   const updateFormData = createFormUpdater(setFormData);
 
@@ -46,12 +56,16 @@ export default function LoginForm({
     }
   };
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    try {
+      e.preventDefault();
 
-    await login(formData);
+      await login(formData);
 
-    handleResetForm();
-    router.replace("/");
+      handleResetForm();
+      router.replace("/");
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
@@ -82,15 +96,7 @@ export default function LoginForm({
 
       {error && <div className="text-red-500 text-sm text-center">{error}</div>}
       {/* 개발 환경에서만 더미 데이터 버튼 표시 */}
-      {process.env.NODE_ENV === "development" && (
-        <button
-          type="button"
-          onClick={fillDummyData}
-          className="bg-gray-500 text-white py-1 px-3 rounded text-xs hover:bg-gray-600 transition"
-        >
-          더미 데이터 채우기
-        </button>
-      )}
+
       <button
         type="submit"
         disabled={isLoading}

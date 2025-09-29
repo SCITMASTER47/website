@@ -18,8 +18,9 @@ export const getJwtFromCookie = async (): Promise<string> => {
       console.log("No access_token cookie found");
       throw new Error("cookie에 Token이 존재하지 않습니다.");
     }
-  } catch {
-    console.log("No access_token cookie found");
+  } catch (error) {
+    console.error(error);
+    console.log("No access_token cookie found", error);
     throw new Error("JWT Token을 가져오지 못했습니다.");
   }
 };

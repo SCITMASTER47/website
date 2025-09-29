@@ -27,6 +27,8 @@ const nextConfig = {
       ignore: [/\api\/v1\/health/],
     },
   },
+  devIndicators: false,
+  reactStrictMode: false,
 };
 
 module.exports = nextConfig;

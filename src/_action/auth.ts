@@ -6,14 +6,34 @@ import { deleteJwtFromServer, setJwtCookie } from "@/_utils/cookie";
  * @param data JWT 토큰
  */
 export const loginAction = async (_data: UserLoginRequest): Promise<void> => {
-  if (process.env.NEXT_PUBLIC_NODE_ENV === "test") {
-    const tmpToken =
-      "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMDMiLCJlbWFpbCI6InRlc3QyMTNAdGVzdC5jb20iLCJpYXQiOjE3NTc0NjY5ODEsImV4cCI6MTc1ODMzMDk4MX0.4Gvq-z2B1rhzynTAIQA2dxxhSod8oFLbrQXJ1vBGr1w";
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    await setJwtCookie(tmpToken);
-    return;
+  try {
+    if (process.env.NEXT_PUBLIC_NODE_ENV === "test") {
+      const tmpToken =
+        "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMDMiLCJlbWFpbCI6InRlc3QyMTNAdGVzdC5jb20iLCJpYXQiOjE3NTc0NjY5ODEsImV4cCI6MTc1ODMzMDk4MX0.4Gvq-z2B1rhzynTAIQA2dxxhSod8oFLbrQXJ1vBGr1w";
+
+      await setJwtCookie(tmpToken);
+      return;
+    }
+    const url = new URL("/api/auth/login", process.env.NEXT_PUBLIC_BASE_URL);
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(_data),
+      credentials: "include", // 쿠키 포함 요청/응답
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || "Login failed");
+    }
+    const resJson = await res.json();
+
+    const token = resJson.data.accessToken;
+    await setJwtCookie(token);
+  } catch (error) {
+    console.error("Login action failed:", error);
+    throw error;
   }
-  //   await setJwtCookie(token);
 };
 
 /**
@@ -32,5 +52,60 @@ export const signUpAction = async (_data: UserSignUpRequest): Promise<void> => {
     await new Promise((resolve) => setTimeout(resolve, 500));
     return;
   }
-  //   await setJwtCookie(token);
+  try {
+    const url = new URL("/api/auth/signup", process.env.NEXT_PUBLIC_BASE_URL);
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(_data),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || "Sign up failed");
+    }
+    const resJson = await res.json();
+
+    console.log("Sign up successful:", resJson);
+  } catch (error) {
+    console.error("Sign up action failed:", error);
+    throw error;
+  }
 };
+
+export async function googleSignIn() {
+  try {
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI ?? "";
+    const scope = "email";
+    const callbackUrl = `${process.env.NEXT_PUBLIC_LOCAL_URL}/auth/signUp`;
+    const oauthUrl =
+      `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${clientId}` +
+      `&redirect_uri=${redirectUri}` +
+      `&response_type=code` +
+      `&scope=${encodeURIComponent(scope)}` +
+      `&state=${callbackUrl}`;
+    window.location.href = oauthUrl;
+  } catch {
+    throw new Error("Google OAuth 실패");
+  }
+}
+export async function googleLogin() {
+  try {
+    const url = new URL("/api/auth/google", process.env.NEXT_PUBLIC_BASE_URL);
+    const callbackUrl = `${process.env.NEXT_PUBLIC_LOCAL_URL}/auth/login`;
+    url.searchParams.append("clientCallbackUri", callbackUrl);
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include", // 쿠키 포함 요청/응답
+    });
+    const resJson = await res.json();
+
+    const authUrl = resJson.data.authUrl;
+    window.location.href = authUrl;
+  } catch {
+    throw new Error("Google OAuth 실패");
+  }
+}

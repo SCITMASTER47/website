@@ -2,26 +2,107 @@
 
 import { useCreateScheduleStore } from "@/_store/createSchedule";
 import { ProgressBarItem } from "@/_types/progress";
+import { Certification } from "@/_types/schedule";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function ProgressBar() {
-  const {
-    currentStepId,
-    stepInfo,
-    loading,
-    progressBarErrorMessage,
-    setCurrentStepId,
-  } = useCreateScheduleStore();
+  const { stepInfo: defaultStepInfo, progressBarErrorMessage } =
+    useCreateScheduleStore();
+  const pathname = usePathname();
+  const [stepInfo, setStepInfo] = useState(defaultStepInfo);
 
-  const currentPath = usePathname();
-  const currentStep = currentPath.split("/").pop();
+  // 현재 단계 추출
+  const currentStep = pathname.split("/").pop() || "certification";
+
+  // Cookie에서 선택된 정보를 읽어와서 stepInfo 업데이트
   useEffect(() => {
-    if (currentStepId !== currentStep) {
-      setCurrentStepId(currentStep || "certification");
+    if (typeof window !== "undefined") {
+      const updatedStepInfo = [...defaultStepInfo];
+
+      // 자격증 정보
+      const licenseTitle = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("create_schedule_license_title="))
+        ?.split("=")[1];
+
+      if (licenseTitle) {
+        updatedStepInfo[0] = {
+          ...updatedStepInfo[0],
+          label: decodeURIComponent(licenseTitle),
+          isDone: true,
+        };
+      }
+
+      // 시험일 정보
+      const examDate = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("create_schedule_exam_date="))
+        ?.split("=")[1];
+
+      if (examDate) {
+        updatedStepInfo[2] = {
+          ...updatedStepInfo[2],
+          label: examDate,
+          isDone: true,
+        };
+      }
+
+      // 교재 정보
+      const bookTitle = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("create_schedule_book_title="))
+        ?.split("=")[1];
+
+      if (bookTitle) {
+        const certification: Certification = JSON.parse(
+          decodeURIComponent(
+            document.cookie
+              .split("; ")
+              .find((row) => row.startsWith("create_schedule_license_id="))
+              ?.split("=")[1] || "{}"
+          )
+        );
+        updatedStepInfo[1] = {
+          ...updatedStepInfo[1],
+          label: decodeURIComponent(bookTitle),
+          url: `/create/book?cid=${certification.id}`,
+          isDone: true,
+        };
+      }
+
+      // 시간 정보 (요일별 시간이 하나라도 설정되어 있으면 완료로 표시)
+      const hasTimeData = document.cookie
+        .split("; ")
+        .some(
+          (row) =>
+            row.startsWith("create_schedule_available_days") &&
+            row.includes("=")
+        );
+
+      if (hasTimeData) {
+        const dateJson = JSON.parse(
+          decodeURIComponent(
+            document.cookie
+              .split("; ")
+              .find((row) => row.startsWith("create_schedule_available_days"))
+              ?.split("=")[1] || "{}"
+          )
+        );
+
+        updatedStepInfo[3] = {
+          ...updatedStepInfo[3],
+          label: dateJson.total
+            ? dateJson.total + "시간"
+            : updatedStepInfo[3].label,
+          isDone: true,
+        };
+      }
+
+      setStepInfo(updatedStepInfo);
     }
-  }, [currentStepId, currentStep, setCurrentStepId]);
+  }, [defaultStepInfo, pathname]); // pathname이 바뀔 때마다 재실행
 
   return (
     <div className="flex-1 gap-2 w-full items-center pl-2 ">
@@ -32,11 +113,7 @@ export default function ProgressBar() {
           </div>
         )}
       </div>
-      <StepProgressBar
-        steps={stepInfo}
-        currentId={currentStepId}
-        disabled={loading}
-      />
+      <StepProgressBar steps={stepInfo} currentId={currentStep} />
     </div>
   );
 }
@@ -44,11 +121,9 @@ export default function ProgressBar() {
 function StepProgressBar({
   steps,
   currentId,
-  disabled,
 }: {
   steps: ProgressBarItem[];
   currentId: string;
-  disabled: boolean;
 }) {
   return (
     <div className="flex flex-col h-full w-full gap-8 justify-start items-start  ">
@@ -57,7 +132,6 @@ function StepProgressBar({
           href={step.url ? step.url : "#"}
           key={idx}
           className="flex items-center  gap-4 "
-          // disabled={disabled}
         >
           <div className="relative flex items-center justify-center">
             {/* 현재 진행중인 원 뒤에 애니메이션 회색 원 */}

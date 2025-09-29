@@ -25,7 +25,22 @@ export interface Schedule {
   startDate: string;
   endDate: string;
   title: string;
+  todos: TodoProps[];
 }
+
+export interface ScheduleDetailResponse {
+  id: string;
+  summary: string;
+  totalPages: string;
+  versionId: string;
+  startDate: string;
+  endDate: string;
+  createdAt: string;
+  updatedAt: string;
+  certificateInfo: Certification;
+  readBookDTO: Book;
+}
+
 export interface Task {
   task_id: string;
   date: string;
@@ -48,12 +63,13 @@ export interface Certification {
   title: string;
   description: string;
   subjects: Subject[];
-  imgUrl?: string;
+  heldBy: string;
 }
 
 export interface Subject {
   id: string;
   name: string;
+  description: string;
 }
 export interface Page<T> {
   pagination: Pagination;
@@ -67,7 +83,7 @@ export interface Pagination {
 export interface Book {
   id: string;
   title: string;
-  company_name: string;
+  companyName: string;
   imgUrl?: string;
   certificate_id: string;
   user_id?: string;
@@ -80,7 +96,8 @@ export interface WeekDay {
 }
 
 export interface MonthlySchedule {
-  [date: string]: MonthlyTodo[];
+  date: string;
+  todos: TodoProps[];
 }
 export interface MonthlyTodo {
   // id: string;
@@ -94,14 +111,20 @@ export interface TodoProps {
   chapter: string;
   startPage: string;
   endPage: string;
-  keyword: string[];
-  minute: string;
-  notes: string;
+  keywords: string[];
+  minute: number;
+  note: string;
   studyGoal: string;
   isDone: boolean;
+  subject: Subject;
 }
 
 export interface Subject {
   id: string;
   name: string;
+}
+
+export interface Chapter {
+  id: number;
+  chapterName: string;
 }

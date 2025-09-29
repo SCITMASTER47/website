@@ -8,6 +8,7 @@ import Link from "next/link";
 
 export default function Header() {
   const { user, logout } = useAuthStore();
+
   const currentUserState = useMemo(() => {
     return user;
   }, [user]);
@@ -27,7 +28,7 @@ export default function Header() {
             />
             {/* hover 하면 user email, 로그아웃 버튼 보이기 */}
 
-            <div className="absolute right-0 mt-2 w-48  flex flex-col items-center gap-2 bg-white border border-border rounded-xl shadow-lg p-4 invisible opacity-0 group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+            <div className="absolute right-0 mt-2 w-48  flex flex-col items-center gap-2 bg-white border border-border rounded-xl shadow-lg p-4 invisible opacity-0 group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
               <div className="w-full flex gap-2 items-center justify-between">
                 <AccountCircleIcon
                   className="text-gray-500 cursor-pointer"
@@ -52,7 +53,7 @@ export default function Header() {
             </div>
           </div>
         ) : (
-          <button>로그인</button>
+          <Link href={"/auth/login"}>로그인</Link>
         )}
       </div>
     </header>

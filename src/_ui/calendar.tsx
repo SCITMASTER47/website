@@ -22,6 +22,7 @@ import { Button } from "./button";
 export interface CalendarItem {
   title: string;
   content: string;
+  isDone: boolean;
 }
 
 export interface CalendarData {
@@ -209,9 +210,9 @@ export default function Calendar({
                         title={`${item.title} (${item.content}분)`}
                       >
                         <div
-                          className={`flex-shrink-0 h-1 w-1 rounded text-xs ${getSubjectColor(
-                            item.title
-                          )}`}
+                          className={`flex-shrink-0 h-1 w-1 rounded text-xs ${
+                            item.isDone ? "bg-green-500" : "bg-gray-300"
+                          }`}
                         />
                         <span className="flex-1 text-[8px] truncate">
                           {item.title}
@@ -250,9 +251,9 @@ export default function Calendar({
                 className="flex items-center gap-2 p-2 bg-gray-50 rounded"
               >
                 <div
-                  className={`w-3 h-3 rounded-full ${getSubjectColor(
-                    item.title
-                  )}`}
+                  className={`w-3 h-3 rounded-full ${
+                    item.isDone ? "bg-green-500" : "bg-gray-300"
+                  }`}
                 />
                 <div className="flex-1">
                   <p className="font-medium text-xs">{item.title}</p>

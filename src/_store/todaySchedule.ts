@@ -7,10 +7,8 @@ interface todayScheduleStore {
   isLoading: boolean;
   doneTodoCount: number;
   notCompletedTodoCount: number;
-  inProgressTodoCount: number;
   totalTodoCount: number;
   setTodos: (todos: TodoProps[]) => void;
-  onClickInProgress: (todoId: number) => Promise<void>;
   onClickComplete: (todoId: number, status: boolean) => Promise<void>;
 }
 
@@ -41,30 +39,7 @@ export const useTodayScheduleStore = create<todayScheduleStore>((set, get) => ({
       totalTodoCount: todos.length,
     });
   },
-  onClickInProgress: async (todoId: number) => {
-    set({ isLoading: true });
-    try {
-      set((state) => {
-        const todo = state.todos.find((t) => t.id === todoId);
-        if (!todo) return state;
 
-        const updatedTodo = { ...todo, status: "in-progress" };
-        const updatedTodos = state.todos.map((t) =>
-          t.id === todoId ? updatedTodo : t
-        );
-
-        return {
-          ...state,
-          todos: updatedTodos,
-          inProgressTodoCount: state.inProgressTodoCount + 1,
-          notCompletedTodoCount: state.notCompletedTodoCount - 1,
-        };
-      });
-    } catch {
-    } finally {
-      set({ isLoading: false });
-    }
-  },
   onClickComplete: async (todoId: number, status: boolean) => {
     const { todos } = get();
     const targetTodo = todos.find((t) => t.id === todoId);

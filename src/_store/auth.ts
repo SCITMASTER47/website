@@ -1,8 +1,17 @@
 "use client";
 import { create } from "zustand";
 import { Session, UserLoginRequest, UserSignUpRequest } from "@/_types/auth";
-import { loginAction, logoutAction, signUpAction } from "@/_action/auth";
-import { getJwtFromCookie, getUserInfoFromJwt } from "@/_utils/cookie";
+import {
+  googleLogin,
+  loginAction,
+  logoutAction,
+  signUpAction,
+} from "@/_action/auth";
+import {
+  getJwtFromCookie,
+  getUserInfoFromJwt,
+  setJwtCookie,
+} from "@/_utils/cookie";
 import { isFormValid } from "@/_utils/form";
 
 interface AuthState {
@@ -33,13 +42,13 @@ const useAuthStore = create<AuthState>((set) => ({
       }
       set({ isLoading: true, error: null });
       await loginAction(data);
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // 디버깅용 딜레이
       const token = await getJwtFromCookie();
       const user: Session = await getUserInfoFromJwt(token);
+
       set({ user, isLoading: false, error: null });
     } catch (error) {
-      console.error("Login failed:", error);
       set({ user: null, isLoading: false, error: (error as Error).message });
+      throw error;
     }
   },
   signUp: async (data: UserSignUpRequest) => {
@@ -67,6 +76,7 @@ const useAuthStore = create<AuthState>((set) => ({
       await logoutAction();
 
       set({ user: null, isLoading: false, error: null });
+      window.location.href = "/"; // 로그아웃 후 로그인 페이지로 리다이렉트
     } catch (error) {
       console.error("Logout failed:", error);
       set({ user: null, isLoading: false, error: (error as Error).message });
@@ -91,12 +101,17 @@ const useAuthStore = create<AuthState>((set) => ({
     }
   },
   googleLogin: async () => {
-    // 향후 구글 로그인 기능 추가 예정
-    console.warn("Google login not implemented yet.");
+    try {
+      await googleLogin();
+    } catch {
+      // 향후 구글 로그인 기능 추가 예정
+      console.warn("Google login not implemented yet.");
+    }
   },
   onGoogleLoginCallback: async (token: string, error?: unknown) => {
     if (error) {
-      console.error("Google login error:", error);
+      // 토큰 저장하기
+
       set({ user: null, error: (error as Error).message });
       return;
     }
@@ -107,9 +122,10 @@ const useAuthStore = create<AuthState>((set) => ({
     }
     try {
       set({ isLoading: true });
-
+      await setJwtCookie(token);
       const jwtToken = await getJwtFromCookie();
       const user: Session = await getUserInfoFromJwt(jwtToken);
+
       set({ user, isLoading: false, error: null });
     } catch (err) {
       console.error("Google login processing failed:", err);
