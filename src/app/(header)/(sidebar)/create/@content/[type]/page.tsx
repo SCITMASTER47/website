@@ -57,7 +57,7 @@ async function BookPage({
     }
     return books;
   });
-  console.log("===== BookPage books", books);
+
   return <BookSelectStep books={books} />;
 }
 async function TimePage() {

@@ -135,7 +135,7 @@ export default function BookSelectStep({ books }: BookSelectStepProps) {
                     <div className="flex flex-col items-center space-y-3">
                       {/* 책 이미지 또는 플레이스홀더 */}
                       <div className="w-full aspect-[3/4] rounded-lg overflow-hidden bg-muted/30 flex items-center justify-center relative">
-                        {/* {book.imgUrl ? (
+                        {book.imgUrl ? (
                           <Image
                             src={book.imgUrl}
                             alt={book.title}
@@ -143,16 +143,15 @@ export default function BookSelectStep({ books }: BookSelectStepProps) {
                             className="object-cover"
                             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                             onError={() => {
-                              console.log('Image failed to load:', book.imgUrl);
+                              console.log("Image failed to load:", book.imgUrl);
                             }}
                           />
-                        ) : 
-                        
-                        ( */}
-                        <div className="flex flex-col items-center justify-center text-muted-foreground">
-                          <ImageIcon className="h-8 w-8 mb-2" />
-                          <span className="text-xs">이미지 없음</span>
-                        </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-muted-foreground">
+                            <ImageIcon className="h-8 w-8 mb-2" />
+                            <span className="text-xs">이미지 없음</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* 책 정보 */}
