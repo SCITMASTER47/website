@@ -50,7 +50,10 @@ export default function TimeSelectPage() {
   };
 
   const handleSubmit = () => {
-    handleClickDateTimeNext({ ...selectedTimes, total: totalHours });
+    handleClickDateTimeNext({
+      ...selectedTimes,
+      total: totalHours / (Object.keys(selectedTimes).length || 1),
+    });
     router.push("/create/confirm");
   };
 
