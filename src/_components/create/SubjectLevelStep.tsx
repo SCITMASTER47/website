@@ -14,50 +14,33 @@ export default function SubjectLevelStep() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const { handleSubjectLevelChange, onSubmit, loading } =
-    useCreateScheduleStore();
-  const [prompt, setPrompt] = useState<string | undefined>(undefined);
-  // 클라이언트 사이드에서만 cookie 정보 가져오기
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        // 자격증 정보 가져오기
-        const licenseCookie = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("create_schedule_license_id="))
-          ?.split("=")[1];
+  const {
+    selectedCertification,
+    subjectLevel,
+    focusNotes,
+    handleSubjectLevelChange,
+    setFocusNotes,
+    onSubmit,
+    loading,
+  } = useCreateScheduleStore();
 
-        if (licenseCookie) {
-          const licenseData = JSON.parse(decodeURIComponent(licenseCookie));
-          // 기존 선택된 proficiency 정보 불러오기
-          const proficiencyCookie = document.cookie
-            .split("; ")
-            .find((row) => row.startsWith("create_schedule_proficiency="))
-            ?.split("=")[1];
-          if (proficiencyCookie) {
-            try {
-              const proficiencyData = JSON.parse(
-                decodeURIComponent(proficiencyCookie)
-              );
-              setSubjectState(proficiencyData);
-            } catch (error) {
-              console.error("Failed to parse proficiency data:", error);
-            }
-          }
-          if (licenseData && licenseData.subjects) {
-            setSubjects(licenseData.subjects);
-          } else {
-            setSubjects([]);
-          }
-        } else {
-          // 자격증 정보가 없으면 빈 배열 설정
-          setSubjects([]);
-        }
-      } catch (error) {
-        console.error("Failed to load data from cookies:", error);
+  // store에서 자격증 정보 가져오기 및 유효성 검사
+  useEffect(() => {
+    if (selectedCertification && selectedCertification.subjects) {
+      setSubjects(selectedCertification.subjects);
+
+      // 기존에 선택된 과목 레벨이 있으면 상태에 반영
+      if (Object.keys(subjectLevel).length > 0) {
+        setSubjectState(subjectLevel);
+      }
+    } else {
+      // 자격증 정보가 없으면 첫 번째 단계로 리다이렉트
+      setSubjects([]);
+      if (!selectedCertification) {
+        router.push("/create/certification");
       }
     }
-  }, []);
+  }, [selectedCertification, subjectLevel, router]);
 
   // 모든 과목에 대한 레벨이 선택되었는지 확인
   const isNextStepAvailable = useMemo(() => {
@@ -84,7 +67,7 @@ export default function SubjectLevelStep() {
   const handleSubmit = async () => {
     setError(null);
     try {
-      const chatSessionId = await onSubmit(prompt);
+      const chatSessionId = await onSubmit(focusNotes);
       router.replace(`/ai/${chatSessionId}`);
     } catch (error) {
       if (error instanceof Error) {
@@ -100,9 +83,13 @@ export default function SubjectLevelStep() {
     <section className="flex flex-col h-full justify-between">
       <CardContent className="flex  overflow-y-auto flex-col gap-4  justify-between">
         <div className="space-y-2">
-          {subjects.length === 0 ? (
+          {!selectedCertification ? (
             <div className="text-center py-8 text-gray-500">
-              선택된 자격증 정보가 없습니다.
+              자격증을 먼저 선택해주세요.
+            </div>
+          ) : subjects.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              자격증 정보를 불러오는 중...
             </div>
           ) : (
             subjects.map((subject) => (
@@ -132,8 +119,8 @@ export default function SubjectLevelStep() {
             id="notes"
             className="w-full min-h-[80px] rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition disabled:cursor-not-allowed disabled:opacity-50 shadow-sm"
             placeholder="특별히 집중하고 싶은 부분이나 요청사항이 있다면 적어주세요"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            value={focusNotes}
+            onChange={(e) => setFocusNotes(e.target.value)}
             disabled={loading}
           />
           {error && <div className="text-red-500 text-sm mt-2">{error}</div>}

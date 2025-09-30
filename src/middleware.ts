@@ -9,59 +9,6 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   console.log("Middleware activated for path:", pathname);
 
-  // Create 단계별 데이터 검증
-  if (pathname.startsWith("/create/")) {
-    const step = pathname.split("/").pop();
-
-    // 각 단계별로 필요한 데이터 확인
-    switch (step) {
-      case "book":
-        if (!request.cookies.get("create_schedule_license_id")?.value) {
-          return NextResponse.redirect(
-            new URL("/create/certification", request.url)
-          );
-        }
-        break;
-      case "date":
-        if (!request.cookies.get("create_schedule_license_id")?.value) {
-          return NextResponse.redirect(
-            new URL("/create/certification", request.url)
-          );
-        }
-        if (!request.cookies.get("create_schedule_book_id")?.value) {
-          return NextResponse.redirect(new URL("/create/book", request.url));
-        }
-
-        break;
-      case "time":
-        if (!request.cookies.get("create_schedule_license_id")?.value) {
-          return NextResponse.redirect(
-            new URL("/create/certification", request.url)
-          );
-        }
-        if (!request.cookies.get("create_schedule_book_id")?.value) {
-          return NextResponse.redirect(new URL("/create/book", request.url));
-        }
-        if (!request.cookies.get("create_schedule_exam_date")?.value) {
-          return NextResponse.redirect(new URL("/create/date", request.url));
-        }
-        break;
-      case "confirm":
-        if (!request.cookies.get("create_schedule_license_id")?.value) {
-          return NextResponse.redirect(
-            new URL("/create/certification", request.url)
-          );
-        }
-        if (!request.cookies.get("create_schedule_book_id")?.value) {
-          return NextResponse.redirect(new URL("/create/book", request.url));
-        }
-        if (!request.cookies.get("create_schedule_exam_date")?.value) {
-          return NextResponse.redirect(new URL("/create/date", request.url));
-        }
-
-        break;
-    }
-  }
   if (process.env.NEXT_PUBLIC_NODE_ENV === "test") {
     return NextResponse.next();
   }
@@ -88,51 +35,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Create 단계별 데이터 검증
-  if (pathname.startsWith("/create/")) {
-    const step = pathname.split("/").pop();
-
-    // 각 단계별로 필요한 데이터 확인
-    switch (step) {
-      case "date":
-        if (!request.cookies.get("create_schedule_license_id")?.value) {
-          return NextResponse.redirect(
-            new URL("/create/certification", request.url)
-          );
-        }
-        break;
-      case "book":
-        if (!request.cookies.get("create_schedule_license_id")?.value) {
-          return NextResponse.redirect(
-            new URL("/create/certification", request.url)
-          );
-        }
-        break;
-      case "time":
-        if (!request.cookies.get("create_schedule_license_id")?.value) {
-          return NextResponse.redirect(
-            new URL("/create/certification", request.url)
-          );
-        }
-        if (!request.cookies.get("create_schedule_book_id")?.value) {
-          return NextResponse.redirect(new URL("/create/book", request.url));
-        }
-        break;
-      case "confirm":
-        if (!request.cookies.get("create_schedule_license_id")?.value) {
-          return NextResponse.redirect(
-            new URL("/create/certification", request.url)
-          );
-        }
-        if (!request.cookies.get("create_schedule_book_id")?.value) {
-          return NextResponse.redirect(new URL("/create/book", request.url));
-        }
-        if (!request.cookies.get("create_schedule_exam_date")?.value) {
-          return NextResponse.redirect(new URL("/create/date", request.url));
-        }
-        break;
-    }
-  }
   console.log("No middleware action needed, proceeding.");
   return NextResponse.next();
 }

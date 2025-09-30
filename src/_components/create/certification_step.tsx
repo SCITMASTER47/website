@@ -8,7 +8,8 @@ import { Badge } from "../../_ui/badge";
 import { Button } from "../../_ui/button";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getAllCertificates } from "@/_action-server/schedule";
 import {
   AwardIcon,
   BookOpenIcon,
@@ -18,16 +19,28 @@ import {
   TrendingUpIcon,
 } from "lucide-react";
 
-export interface CertificationStepProps {
-  certifications: Certification[];
-}
-export default function CertificationStep({
-  certifications,
-}: CertificationStepProps) {
+export default function CertificationStep() {
   const { handleSelectCert, loading } = useCreateScheduleStore();
   const router = useRouter();
   const [selectedCert, setSelectedCert] = useState<Certification | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
+  const [certifications, setCertifications] = useState<Certification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCertifications = async () => {
+      try {
+        const data = await getAllCertificates();
+        setCertifications(data);
+      } catch (error) {
+        console.error("Failed to fetch certifications:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCertifications();
+  }, []);
 
   // 현대적이고 부드러운 그라데이션 색상 팔레트
   const gradientPalette = [
@@ -104,6 +117,17 @@ export default function CertificationStep({
       setIsSelecting(false);
     }
   };
+  if (isLoading) {
+    return (
+      <div className="flex flex-col grow h-full justify-center items-center">
+        <CertifyLogo loading={true} />
+        <p className="text-sm text-muted-foreground font-medium mt-4">
+          자격증 정보를 불러오는 중...
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full space-y-6">
       {loading ? (

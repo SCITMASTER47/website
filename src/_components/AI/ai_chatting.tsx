@@ -5,6 +5,7 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import PersonIcon from "@mui/icons-material/Person";
 import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 
 export default function AIChatting() {
   const { chats, isGenerating } = useAIChatStore();
@@ -100,9 +101,11 @@ export default function AIChatting() {
                   </div>
                   <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-gray-100">
                     <div className="break-words whitespace-pre-wrap text-sm text-gray-800 leading-relaxed">
-                      {typeof chat.message === "string"
-                        ? chat.message
-                        : String(chat.message ?? "")}
+                      <ReactMarkdown>
+                        {typeof chat.message === "string"
+                          ? chat.message
+                          : String(chat.message ?? "")}
+                      </ReactMarkdown>
                     </div>
                   </div>
                 </div>
