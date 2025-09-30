@@ -145,7 +145,7 @@ export async function getAllBooks(certificationId: string): Promise<Book[]> {
 
     const res = await fetch(url, {
       method: "GET",
-      cache: "force-cache",
+      // cache: "force-cache",
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -181,7 +181,7 @@ export async function getAllCertificates(): Promise<Certification[]> {
 
     const res = await fetch(url, {
       method: "GET",
-      cache: "force-cache",
+      // cache: "force-cache",
       headers: {
         Authorization: `Bearer ${token}`,
       },

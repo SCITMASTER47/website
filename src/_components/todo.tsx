@@ -215,7 +215,15 @@ export default function Todo({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1">
             <CalendarIcon />
-            <span className="text-xs text-[#a8a39a] font-medium">{date}</span>
+            <span className="text-xs text-[#a8a39a] font-medium">
+              {date}
+              {/* 무슨 요일인지 */}
+              <span className="text-xs text-[#a8a39a] font-medium">
+                {`(${new Date(date).toLocaleDateString("ko-KR", {
+                  weekday: "short",
+                })})`}
+              </span>
+            </span>
           </div>
           <div className="flex items-center gap-1">
             <BookIcon />

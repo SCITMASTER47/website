@@ -8,6 +8,7 @@ import { Book } from "@/_types/schedule";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { getAllBooks } from "@/_action-server/schedule";
 import {
   BookOpenIcon,
   SearchIcon,
@@ -16,34 +17,38 @@ import {
 } from "lucide-react";
 
 export interface BookSelectStepProps {
-  books: Book[];
+  searchName?: string;
 }
 
-export default function BookSelectStep({ books }: BookSelectStepProps) {
+export default function BookSelectStep({ searchName }: BookSelectStepProps) {
   const router = useRouter();
-  const { handleBookSelect } = useCreateScheduleStore();
-  const [searchTerm, setSearchTerm] = useState("");
+  const { handleBookSelect, selectedCertification } = useCreateScheduleStore();
+  const [searchTerm, setSearchTerm] = useState(searchName || "");
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
   useEffect(() => {
-    // cid가 있으면 searchParams에 설정
-    const searchParams = new URLSearchParams(window.location.search);
-    if (!searchParams.has("cid")) {
-      const licenseCookie = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("create_schedule_license_id="))
-        ?.split("=")[1];
-      const license = JSON.parse(decodeURIComponent(licenseCookie || "{}"));
-      const licenseId = license.id;
-      if (licenseId) {
-        searchParams.set("cid", licenseId);
-        router.replace(
-          `${window.location.pathname}?${searchParams.toString()}`
-        );
+    const fetchBooks = async () => {
+      if (!selectedCertification) {
+        router.push("/create/certification");
+        return;
       }
-    }
-  }, [router]);
+
+      try {
+        setIsDataLoading(true);
+        const data = await getAllBooks(selectedCertification.id);
+        setBooks(data);
+      } catch (error) {
+        console.error("Failed to fetch books:", error);
+      } finally {
+        setIsDataLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, [selectedCertification, router]);
 
   const handleSelect = async (book: Book) => {
     setIsLoading(true);
@@ -83,6 +88,17 @@ export default function BookSelectStep({ books }: BookSelectStepProps) {
   //   acc[company].push(book);
   //   return acc;
   // }, {} as Record<string, Book[]>);
+
+  if (isDataLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">교재 정보를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full space-y-6">

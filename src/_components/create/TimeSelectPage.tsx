@@ -3,57 +3,71 @@ import React, { useEffect, useState } from "react";
 import { Card } from "@/_ui/card";
 import { useRouter } from "next/navigation";
 import { useCreateScheduleStore } from "@/_store/createSchedule";
+import { AvailableDayInfo } from "@/_types/schedule";
 
-const DAYS = ["월", "화", "수", "목", "금", "토", "일"];
+const DAYS = [
+  { label: "월", value: "MON" },
+  { label: "화", value: "TUE" },
+  { label: "수", value: "WED" },
+  { label: "목", value: "THU" },
+  { label: "금", value: "FRI" },
+  { label: "토", value: "SAT" },
+  { label: "일", value: "SUN" },
+];
 
 export default function TimeSelectPage() {
-  const { handleClickDateTimeNext } = useCreateScheduleStore();
+  const {
+    availableDays,
+    handleClickDateTimeNext,
+    selectedCertification,
+    selectedBook,
+    examDate,
+  } = useCreateScheduleStore();
   const router = useRouter();
   const [selectedTimes, setSelectedTimes] = useState<Record<string, number>>(
     {}
   );
 
-  // 시작하면 cookie에 저장된 정보를 바탕으로 state초기화
+  // store에서 기존 선택된 시간 정보 가져오기
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        // 자격증 정보 가져오기
-        const availableDaysCookie = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("create_schedule_available_days="))
-          ?.split("=")[1];
-
-        if (availableDaysCookie) {
-          const availableDaysData = JSON.parse(
-            decodeURIComponent(availableDaysCookie)
-          );
-          if (availableDaysData) {
-            setSelectedTimes({ ...availableDaysData, total: 0 });
-          } else {
-            setSelectedTimes({});
-          }
-        } else {
-          // 자격증 정보가 없으면 빈 배열 설정
-          setSelectedTimes({});
-        }
-      } catch (error) {
-        console.error("Failed to load data from cookies:", error);
-      }
+    if (availableDays.length > 0) {
+      const timesMap = availableDays.reduce((acc, dayInfo) => {
+        acc[dayInfo.day] = dayInfo.hour;
+        return acc;
+      }, {} as Record<string, number>);
+      setSelectedTimes(timesMap);
     }
-  }, []);
+  }, [availableDays]);
 
-  const handleTimeSelect = (day: string, hours: number) => {
-    setSelectedTimes((prev) => ({
-      ...prev,
-      [day]: hours,
-    }));
+  // 유효성 검사: 이전 단계가 완료되었는지 확인
+  useEffect(() => {
+    if (!selectedCertification || !selectedBook || !examDate) {
+      router.push("/create/certification");
+    }
+  }, [selectedCertification, selectedBook, examDate, router]);
+
+  const handleTimeSelect = (dayValue: string, hours: number) => {
+    const newTimes = {
+      ...selectedTimes,
+      [dayValue]: hours,
+    };
+
+    // 0시간인 경우 해당 요일 제거
+    if (hours === 0) {
+      delete newTimes[dayValue];
+    }
+
+    setSelectedTimes(newTimes);
+
+    // store에 실시간 업데이트
+    const dayInfo: AvailableDayInfo = {
+      day: dayValue,
+      hour: hours,
+    };
+    handleClickDateTimeNext(dayInfo);
   };
 
   const handleSubmit = () => {
-    handleClickDateTimeNext({
-      ...selectedTimes,
-      total: totalHours / (Object.keys(selectedTimes).length || 1),
-    });
     router.push("/create/confirm");
   };
 
@@ -67,14 +81,15 @@ export default function TimeSelectPage() {
       <Card className="p-6">
         <div className="space-y-2">
           {DAYS.map((day) => (
-            <div key={day} className="flex items-center gap-4">
+            <div key={day.value} className="flex items-center gap-4">
               <div className="w-8 text-center text-md font-bold block">
-                {day}
+                {day.label}
               </div>
               <div className="flex-1">
                 <TimeBar
-                  day={day}
-                  selectedHours={selectedTimes[day] || 0}
+                  dayValue={day.value}
+                  dayLabel={day.label}
+                  selectedHours={selectedTimes[day.value] || 0}
                   onTimeSelect={handleTimeSelect}
                 />
               </div>
@@ -85,14 +100,24 @@ export default function TimeSelectPage() {
         <div className="mt-8 pt-6 border-t border-gray-200">
           <div className="flex justify-between items-center mb-4">
             <div className="text-lg font-medium">
-              <span className="text-purple-600">{totalHours}시간</span>
+              <span className="text-purple-600">총 {totalHours}시간</span>
+              {Object.keys(selectedTimes).length > 0 && (
+                <span className="text-sm text-gray-500 ml-2">
+                  (주 {Object.keys(selectedTimes).length}일)
+                </span>
+              )}
             </div>
             <button
               type="button"
-              className="text-sm text-gray-500 hover:text-gray-700"
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                totalHours > 0
+                  ? "bg-purple-600 text-white hover:bg-purple-700"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
               onClick={handleSubmit}
+              disabled={totalHours === 0}
             >
-              다음
+              다음 단계
             </button>
           </div>
         </div>
@@ -102,12 +127,18 @@ export default function TimeSelectPage() {
 }
 
 interface TimeBarProps {
-  day: string;
+  dayValue: string;
+  dayLabel: string;
   selectedHours: number;
-  onTimeSelect: (day: string, hours: number) => void;
+  onTimeSelect: (dayValue: string, hours: number) => void;
 }
 
-function TimeBar({ day, selectedHours, onTimeSelect }: TimeBarProps) {
+function TimeBar({
+  dayValue,
+  dayLabel,
+  selectedHours,
+  onTimeSelect,
+}: TimeBarProps) {
   const hours = Array.from({ length: 25 }, (_, i) => i); // 0부터 24까지
 
   return (
@@ -116,7 +147,7 @@ function TimeBar({ day, selectedHours, onTimeSelect }: TimeBarProps) {
         {hours.map((hour) => (
           <button
             key={hour}
-            onClick={() => onTimeSelect(day, hour)}
+            onClick={() => onTimeSelect(dayValue, hour)}
             className={`
                group w-6 h-8 rounded-sm transition-all duration-200 hover:scale-110 flex items-center justify-center
               ${
@@ -131,7 +162,9 @@ function TimeBar({ day, selectedHours, onTimeSelect }: TimeBarProps) {
                   : "bg-gray-200 hover:bg-gray-300"
               }
             `}
-            title={hour === 0 ? "공부 안함" : `${hour}시간`}
+            title={
+              hour === 0 ? `${dayLabel} 공부 안함` : `${dayLabel} ${hour}시간`
+            }
           >
             <span
               className={`${

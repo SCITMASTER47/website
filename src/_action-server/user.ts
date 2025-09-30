@@ -16,7 +16,7 @@ export async function getAllUsers(): Promise<UserSearchResult> {
       headers: {
         Authorization: `Bearer ${token}`,
       },
-      next: { tags: ["users"], revalidate: 60 },
+      // next: { tags: ["users"], revalidate: 60 },
     });
 
     if (!response.ok) {

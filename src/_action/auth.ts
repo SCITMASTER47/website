@@ -75,18 +75,7 @@ export const signUpAction = async (_data: UserSignUpRequest): Promise<void> => {
 
 export async function googleSignIn() {
   try {
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI ?? "";
-    const scope = "email";
-    const callbackUrl = `${process.env.NEXT_PUBLIC_LOCAL_URL}/auth/signUp`;
-    const oauthUrl =
-      `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${clientId}` +
-      `&redirect_uri=${redirectUri}` +
-      `&response_type=code` +
-      `&scope=${encodeURIComponent(scope)}` +
-      `&state=${callbackUrl}`;
-    window.location.href = oauthUrl;
+    await googleLogin();
   } catch {
     throw new Error("Google OAuth 실패");
   }

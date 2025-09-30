@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import {
+  AvailableDayInfo,
   Book,
   Certification,
   ScheduleCreateRequest,
@@ -12,10 +13,21 @@ import { createSchedule } from "@/_action/schedule";
 import { createAISessionResponse } from "@/_types/chat";
 
 interface createScheduleStore {
+  // 스텝 정보
   weekdays: WeekDay[];
   stepInfo: ProgressBarItem[];
   loading: boolean;
   progressBarErrorMessage: string | null;
+
+  // 스케줄 생성 데이터
+  selectedCertification: Certification | null;
+  selectedBook: Book | null;
+  examDate: Date | null;
+  subjectLevel: { [key: string]: "초급" | "중급" | "고급" | null };
+  availableDays: AvailableDayInfo[];
+  focusNotes: string;
+
+  // 액션들
   reset: () => void;
   handleSelectCert: (certification: Certification) => string;
   handleExamDateChange: (date: Date | null) => string;
@@ -24,8 +36,11 @@ interface createScheduleStore {
     [key: string]: "초급" | "중급" | "고급" | null;
   }) => void;
   setFocusNotes: (notes: string) => void;
-  handleClickDateTimeNext: (availableDays: Record<string, number>) => void;
+  handleClickDateTimeNext: (availableDays: AvailableDayInfo) => void;
   onSubmit: (prompt: string | undefined) => Promise<string>;
+
+  // 유효성 검사
+  canGoToNextStep: (currentStep: string) => boolean;
 }
 
 const defaultStepText: ProgressBarItem[] = [
@@ -67,123 +82,85 @@ const defaultStepText: ProgressBarItem[] = [
 ];
 export const useCreateScheduleStore = create<createScheduleStore>(
   (set, get) => ({
-    currentStepId: "certification",
+    // 스텝 정보
     stepInfo: defaultStepText,
     weekdays: weekdays,
     loading: false,
     progressBarErrorMessage: null,
+
+    // 스케줄 생성 데이터
+    selectedCertification: null,
+    selectedBook: null,
+    examDate: null,
+    subjectLevel: {},
+    availableDays: [],
+    focusNotes: "",
+
     reset: () => {
-      //cookie 모두 reset
-      if (typeof window !== "undefined") {
-        document.cookie = `create_schedule_license_id=; path=/; max-age=0`;
-        document.cookie = `create_schedule_license_title=; path=/; max-age=0`;
-        document.cookie = `create_schedule_proficiency=; path=/; max-age=0`;
-        document.cookie = `create_schedule_exam_date=; path=/; max-age=0`;
-        document.cookie = `create_schedule_book_id=; path=/; max-age=0`;
-        document.cookie = `create_schedule_book_title=; path=/; max-age=0`;
-        document.cookie = `create_schedule_available_days=; path=/; max-age=0`;
-      }
+      set({
+        selectedCertification: null,
+        selectedBook: null,
+        examDate: null,
+        subjectLevel: {},
+        availableDays: [],
+        focusNotes: "",
+        loading: false,
+        progressBarErrorMessage: null,
+      });
     },
     handleSelectCert: (certification: Certification) => {
-      // Cookie에 저장
-      if (typeof window !== "undefined") {
-        document.cookie = `create_schedule_license_id=${JSON.stringify(
-          certification
-        )}; path=/; max-age=86400`;
-        document.cookie = `create_schedule_license_title=${encodeURIComponent(
-          certification.title
-        )}; path=/; max-age=86400`;
-        document.cookie = `create_schedule_proficiency=; path=/; max-age=0`;
-      }
+      set({ selectedCertification: certification });
       return (
         `${get().stepInfo[0].nextUrl}?cid=${certification.id}` || "/create/book"
       );
     },
     handleExamDateChange: (date: Date | null) => {
-      const exam_date = date
-        ? new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-            .toISOString()
-            .split("T")[0]
-        : "";
+      if (!date) return "#";
 
-      if (exam_date === "") return "#";
-
-      // Cookie에 저장
-      if (typeof window !== "undefined") {
-        document.cookie = `create_schedule_exam_date=${exam_date}; path=/; max-age=86400`;
-      }
-
+      set({ examDate: date });
       return get().stepInfo[2].nextUrl || "/create/time";
     },
     handleBookSelect: (book: Book) => {
-      // Cookie에 저장
-      if (typeof window !== "undefined") {
-        document.cookie = `create_schedule_book_id=${book.id}; path=/; max-age=86400`;
-        document.cookie = `create_schedule_book_title=${encodeURIComponent(
-          book.title
-        )}; path=/; max-age=86400`;
-      }
+      set({ selectedBook: book });
       return get().stepInfo[1].nextUrl || "/create/date";
     },
 
     handleSubjectLevelChange: (subjectLevel: {
       [key: string]: "초급" | "중급" | "고급" | null;
     }) => {
-      if (typeof window !== "undefined") {
-        document.cookie = `create_schedule_proficiency=${encodeURIComponent(
-          JSON.stringify(subjectLevel)
-        )}; path=/; max-age=86400`;
-      }
+      set({ subjectLevel });
     },
-    setFocusNotes: (notes: string) => {},
+
+    setFocusNotes: (notes: string) => {
+      set({ focusNotes: notes });
+    },
     onSubmit: async (prompt: string | undefined) => {
       try {
         set({ loading: true });
-        // cookie 에서 정보 가져와  ScheduleCreateRequest 형태로 만들기
-        const licenseCookie = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("create_schedule_license_id="))
-          ?.split("=")[1];
-        const license = JSON.parse(
-          decodeURIComponent(licenseCookie || "")
-        ) as Certification;
-        const examDateCookie = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("create_schedule_exam_date="))
-          ?.split("=")[1];
-        const bookIdCookie = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("create_schedule_book_id="))
-          ?.split("=")[1];
-        const availableDaysCookie = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("create_schedule_available_days="))
-          ?.split("=")[1];
-        const availableDays = JSON.parse(
-          decodeURIComponent(availableDaysCookie!)
-        ) as { [key: string]: number };
-        const proficiencyCookie = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("create_schedule_proficiency="))
-          ?.split("=")[1];
+        const state = get();
 
         if (
-          license &&
-          examDateCookie &&
-          bookIdCookie &&
-          availableDaysCookie &&
-          proficiencyCookie
+          state.selectedCertification &&
+          state.examDate &&
+          state.selectedBook &&
+          state.availableDays.length > 0 &&
+          Object.keys(state.subjectLevel).length > 0
         ) {
           const formData: ScheduleCreateRequest = {
-            licenseId: license.id,
-            examDate: decodeURIComponent(examDateCookie),
-            bookId: JSON.parse(decodeURIComponent(bookIdCookie)),
-            availableDays: Object.keys(availableDays).filter(
-              (key) => key !== "total" && availableDays[key] > 0
+            licenseId: state.selectedCertification.id,
+            examDate: state.examDate.toISOString().split("T")[0],
+            bookId: state.selectedBook.id,
+            weeklySchedule: state.availableDays,
+            proficiency: Object.fromEntries(
+              Object.entries(state.subjectLevel).filter(
+                ([_, value]) => value !== null
+              )
+            ) as { [key: string]: "초급" | "중급" | "고급" },
+            userPrompt: prompt ?? state.focusNotes,
+            targetHour: state.availableDays.reduce(
+              (sum, day) => sum + day.hour,
+              0
             ),
-            proficiency: JSON.parse(decodeURIComponent(proficiencyCookie)),
-            userPrompt: prompt ?? "",
-            targetHour: availableDays["total"],
           };
 
           const createResponse: createAISessionResponse = await createSchedule(
@@ -201,12 +178,53 @@ export const useCreateScheduleStore = create<createScheduleStore>(
         set({ loading: false });
       }
     },
+
     handleClickDateTimeNext: (availableDays) => {
-      // 선택된 요일과 목표 시간을 쿠키에 저장
-      if (typeof window !== "undefined") {
-        document.cookie = `create_schedule_available_days=${JSON.stringify(
-          availableDays
-        )}; path=/; max-age=86400`;
+      // availableDays에 day가 있으면 list에서 삭제, 없으면 추가
+      const currentDays = get().availableDays;
+      const dayIndex = currentDays.findIndex(
+        (day) => day.day === availableDays.day
+      );
+      if (dayIndex > -1) {
+        // 이미 선택된 요일인 경우 제거
+        currentDays.splice(dayIndex, 1);
+      } else {
+        // 선택되지 않은 요일인 경우 추가
+        currentDays.push(availableDays);
+      }
+      set({ availableDays: currentDays });
+    },
+
+    canGoToNextStep: (currentStep: string) => {
+      const state = get();
+      switch (currentStep) {
+        case "certification":
+          return !!state.selectedCertification;
+        case "book":
+          return !!state.selectedCertification && !!state.selectedBook;
+        case "date":
+          return (
+            !!state.selectedCertification &&
+            !!state.selectedBook &&
+            !!state.examDate
+          );
+        case "time":
+          return (
+            !!state.selectedCertification &&
+            !!state.selectedBook &&
+            !!state.examDate &&
+            !!state.availableDays
+          );
+        case "confirm":
+          return (
+            !!state.selectedCertification &&
+            !!state.selectedBook &&
+            !!state.examDate &&
+            !!state.availableDays &&
+            Object.keys(state.subjectLevel).length > 0
+          );
+        default:
+          return false;
       }
     },
   })
