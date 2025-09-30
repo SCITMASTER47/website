@@ -5,6 +5,10 @@ import ExamDateStep from "@/_components/create/ExamDateStep";
 import TimeSelectPage from "@/_components/create/TimeSelectPage";
 import { Book } from "@/_types/schedule";
 import SubjectLevelStep from "@/_components/create/SubjectLevelStep";
+import {
+  BookSelectSkeleton,
+  CertificationSkeleton,
+} from "@/_components/create/LoadingSkeleton";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -18,11 +22,16 @@ export default async function CreatePage({
   const { type } = await params;
   const { cid, searchName } = await searchParams;
 
-  if (type === "certification") return <Certification />;
+  if (type === "certification")
+    return (
+      <Suspense fallback={<CertificationSkeleton />}>
+        <Certification />
+      </Suspense>
+    );
   if (type === "date") return <Date />;
   if (type === "book")
     return (
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<BookSelectSkeleton />}>
         <BookPage certificateId={cid} searchName={searchName} />
       </Suspense>
     );

@@ -1,4 +1,5 @@
 import ProgressBar from "@/_components/progressBar";
+import Loading from "@/_components/Loading";
 import { Suspense } from "react";
 
 export default function CreateLayout({
@@ -24,7 +25,20 @@ export default function CreateLayout({
 
         {/* 오른쪽 절반 - 고정 영역 */}
         <section className="flex flex-col flex-5/7 h-full overflow-y-auto gap-4 pl-4">
-          <Suspense fallback={<div>Loading...</div>}>{content}</Suspense>
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center h-full">
+                <Loading
+                  type="spinner"
+                  size="lg"
+                  text="페이지를 불러오는 중..."
+                  className="py-20"
+                />
+              </div>
+            }
+          >
+            {content}
+          </Suspense>
         </section>
       </section>
     </div>
