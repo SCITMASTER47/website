@@ -2,14 +2,17 @@ export interface ScheduleCreateRequest {
   licenseId: string;
   examDate: string;
   bookId: string;
-  availableDays: string[];
+  weeklySchedule: AvailableDayInfo[];
   proficiency: {
     [key: string]: "초급" | "중급" | "고급";
   };
   userPrompt: string;
   targetHour: number;
 }
-
+export interface AvailableDayInfo {
+  day: string;
+  hour: number;
+}
 export interface ScheduleResponse {
   plan_id: string;
   license_id: string;

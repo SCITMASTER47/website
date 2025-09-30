@@ -60,10 +60,10 @@ export default function ProgressBar() {
     }
 
     // 시간 정보
-    if (availableDays && availableDays.total) {
+    if (availableDays && availableDays.length > 0) {
       updatedStepInfo[3] = {
         ...updatedStepInfo[3],
-        label: `${availableDays.total}시간`,
+        label: `${availableDays.reduce((sum, day) => sum + day.hour, 0)}시간`,
         isDone: true,
       };
     }

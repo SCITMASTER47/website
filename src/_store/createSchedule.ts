@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import {
+  AvailableDayInfo,
   Book,
   Certification,
   ScheduleCreateRequest,
@@ -23,7 +24,7 @@ interface createScheduleStore {
   selectedBook: Book | null;
   examDate: Date | null;
   subjectLevel: { [key: string]: "초급" | "중급" | "고급" | null };
-  availableDays: Record<string, number> | null;
+  availableDays: AvailableDayInfo[];
   focusNotes: string;
 
   // 액션들
@@ -35,7 +36,7 @@ interface createScheduleStore {
     [key: string]: "초급" | "중급" | "고급" | null;
   }) => void;
   setFocusNotes: (notes: string) => void;
-  handleClickDateTimeNext: (availableDays: Record<string, number>) => void;
+  handleClickDateTimeNext: (availableDays: AvailableDayInfo) => void;
   onSubmit: (prompt: string | undefined) => Promise<string>;
 
   // 유효성 검사
@@ -92,7 +93,7 @@ export const useCreateScheduleStore = create<createScheduleStore>(
     selectedBook: null,
     examDate: null,
     subjectLevel: {},
-    availableDays: null,
+    availableDays: [],
     focusNotes: "",
 
     reset: () => {
@@ -101,7 +102,7 @@ export const useCreateScheduleStore = create<createScheduleStore>(
         selectedBook: null,
         examDate: null,
         subjectLevel: {},
-        availableDays: null,
+        availableDays: [],
         focusNotes: "",
         loading: false,
         progressBarErrorMessage: null,
@@ -142,23 +143,24 @@ export const useCreateScheduleStore = create<createScheduleStore>(
           state.selectedCertification &&
           state.examDate &&
           state.selectedBook &&
-          state.availableDays &&
+          state.availableDays.length > 0 &&
           Object.keys(state.subjectLevel).length > 0
         ) {
           const formData: ScheduleCreateRequest = {
             licenseId: state.selectedCertification.id,
             examDate: state.examDate.toISOString().split("T")[0],
             bookId: state.selectedBook.id,
-            availableDays: Object.keys(state.availableDays).filter(
-              (key) => key !== "total" && state.availableDays![key] > 0
-            ),
+            weeklySchedule: state.availableDays,
             proficiency: Object.fromEntries(
               Object.entries(state.subjectLevel).filter(
                 ([_, value]) => value !== null
               )
             ) as { [key: string]: "초급" | "중급" | "고급" },
             userPrompt: prompt ?? state.focusNotes,
-            targetHour: state.availableDays["total"],
+            targetHour: state.availableDays.reduce(
+              (sum, day) => sum + day.hour,
+              0
+            ),
           };
 
           const createResponse: createAISessionResponse = await createSchedule(
@@ -178,7 +180,19 @@ export const useCreateScheduleStore = create<createScheduleStore>(
     },
 
     handleClickDateTimeNext: (availableDays) => {
-      set({ availableDays });
+      // availableDays에 day가 있으면 list에서 삭제, 없으면 추가
+      const currentDays = get().availableDays;
+      const dayIndex = currentDays.findIndex(
+        (day) => day.day === availableDays.day
+      );
+      if (dayIndex > -1) {
+        // 이미 선택된 요일인 경우 제거
+        currentDays.splice(dayIndex, 1);
+      } else {
+        // 선택되지 않은 요일인 경우 추가
+        currentDays.push(availableDays);
+      }
+      set({ availableDays: currentDays });
     },
 
     canGoToNextStep: (currentStep: string) => {
